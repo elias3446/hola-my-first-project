@@ -536,13 +536,17 @@ export const useConversations = () => {
 
       if (error) throw error;
 
-      // Log event to group history
-      await supabase.from("group_history").insert({
-        conversacion_id: conversationId,
-        action_type: 'member_left',
-        performed_by: profile.id,
-        affected_user_id: profile.id,
-      });
+      // Try to log event to group history (ignore errors)
+      try {
+        await supabase.from("group_history").insert({
+          conversacion_id: conversationId,
+          action_type: 'member_left',
+          performed_by: profile.id,
+          affected_user_id: profile.id,
+        });
+      } catch (historyError) {
+        console.log("Could not log to history:", historyError);
+      }
 
       await fetchConversations();
       return true;
