@@ -58,6 +58,73 @@ const ChartContainer = React.forwardRef<
 });
 ChartContainer.displayName = "Chart";
 
+// Sanitize CSS color value to prevent injection attacks
+const sanitizeCSSColor = (color: string | undefined): string | null => {
+  if (!color) return null;
+  
+  const trimmedColor = color.trim();
+  
+  // Enforce maximum length to prevent DoS
+  if (trimmedColor.length > 50) {
+    console.warn(`Color value too long and rejected: ${color}`);
+    return null;
+  }
+  
+  // Strict validation for safe color formats only
+  // Hex colors: #RGB, #RRGGBB, #RRGGBBAA
+  const hexPattern = /^#[0-9a-fA-F]{3}$|^#[0-9a-fA-F]{6}$|^#[0-9a-fA-F]{8}$/;
+  // RGB/RGBA: rgb(0-255, 0-255, 0-255) or rgba(0-255, 0-255, 0-255, 0-1)
+  const rgbPattern = /^rgba?\(\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*(?:,\s*(0|1|0?\.[0-9]+)\s*)?\)$/;
+  // HSL/HSLA: hsl(0-360, 0-100%, 0-100%) or hsla(0-360, 0-100%, 0-100%, 0-1)
+  const hslPattern = /^hsla?\(\s*([0-9]{1,3}(?:\.[0-9]+)?)\s*,?\s*([0-9]{1,3}(?:\.[0-9]+)?)%?\s*,?\s*([0-9]{1,3}(?:\.[0-9]+)?)%?\s*(?:,?\s*(0|1|0?\.[0-9]+)\s*)?\)$/;
+  // CSS named colors (whitelist of common safe colors)
+  const namedColorPattern = /^(transparent|currentColor|inherit|initial|unset|black|white|red|green|blue|yellow|orange|purple|pink|gray|grey|brown|cyan|magenta|lime|navy|teal|olive|maroon|aqua|silver|fuchsia|indigo|violet|gold|coral|salmon|khaki|plum|orchid|tan|peru|sienna|crimson|azure|ivory|lavender|beige|wheat|mint|jade|turquoise|slate|charcoal)$/i;
+  
+  if (hexPattern.test(trimmedColor)) {
+    return trimmedColor;
+  }
+  
+  if (rgbPattern.test(trimmedColor)) {
+    const match = trimmedColor.match(rgbPattern);
+    if (match) {
+      // Validate RGB values are 0-255
+      const [_, r, g, b, a] = match;
+      if (parseInt(r) <= 255 && parseInt(g) <= 255 && parseInt(b) <= 255) {
+        return trimmedColor;
+      }
+    }
+  }
+  
+  if (hslPattern.test(trimmedColor)) {
+    const match = trimmedColor.match(hslPattern);
+    if (match) {
+      // Validate HSL values are within valid ranges
+      const [_, h, s, l, a] = match;
+      if (parseFloat(h) <= 360 && parseFloat(s) <= 100 && parseFloat(l) <= 100) {
+        return trimmedColor;
+      }
+    }
+  }
+  
+  if (namedColorPattern.test(trimmedColor)) {
+    return trimmedColor.toLowerCase();
+  }
+  
+  console.warn(`Invalid color value detected and rejected: ${color}`);
+  return null;
+};
+
+// Sanitize chart ID to prevent CSS injection
+const sanitizeChartId = (id: string): string => {
+  return id.replace(/[^a-zA-Z0-9_-]/g, '');
+};
+
+// Sanitize CSS variable key names to prevent injection
+const sanitizeCSSKey = (key: string): string => {
+  // Only allow alphanumeric characters, hyphens, and underscores
+  return key.replace(/[^a-zA-Z0-9_-]/g, '');
+};
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color);
 
@@ -65,18 +132,24 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
+  const sanitizedId = sanitizeChartId(id);
+
   return (
     <style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(
             ([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${sanitizedId}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color;
-    return color ? `  --color-${key}: ${color};` : null;
+    const sanitizedColor = sanitizeCSSColor(color);
+    const sanitizedKey = sanitizeCSSKey(key);
+    // Only output if both key and color are valid
+    return sanitizedColor && sanitizedKey ? `  --color-${sanitizedKey}: ${sanitizedColor};` : null;
   })
+  .filter(Boolean)
   .join("\n")}
 }
 `,
