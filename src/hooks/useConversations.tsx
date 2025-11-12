@@ -527,29 +527,16 @@ export const useConversations = () => {
     if (!profile?.id) return false;
 
     try {
-      // Instead of deleting, mark as hidden so the conversation is preserved
-      const { error } = await supabase
-        .from("participantes_conversacion")
-        .update({ hidden_at: new Date().toISOString() })
-        .eq("conversacion_id", conversationId)
-        .eq("user_id", profile.id);
+      // Use secure RPC function to leave group
+      const { data, error } = await supabase
+        .rpc('leave_group_for_user', {
+          _conversation_id: conversationId
+        });
 
       if (error) throw error;
 
-      // Try to log event to group history (ignore errors)
-      try {
-        await supabase.from("group_history").insert({
-          conversacion_id: conversationId,
-          action_type: 'member_left',
-          performed_by: profile.id,
-          affected_user_id: profile.id,
-        });
-      } catch (historyError) {
-        console.log("Could not log to history:", historyError);
-      }
-
       await fetchConversations();
-      return true;
+      return data === true;
     } catch (error) {
       console.error("Error leaving group:", error);
       return false;
