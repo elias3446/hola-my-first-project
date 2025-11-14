@@ -26,6 +26,7 @@ export interface Conversation {
   muted?: boolean;
   my_role?: 'miembro' | 'administrador';
   hidden?: boolean;
+  hidden_from_all?: boolean;
 }
 
 export const useConversations = () => {
@@ -40,7 +41,7 @@ export const useConversations = () => {
       // Get user's conversations with role (including hidden ones for groups)
       const { data: participantes, error: partError } = await supabase
         .from("participantes_conversacion")
-        .select("conversacion_id, ultimo_leido_at, muted, role, hidden_at")
+        .select("conversacion_id, ultimo_leido_at, muted, role, hidden_at, hidden_from_all")
         .eq("user_id", profile.id);
 
       if (partError) throw partError;
@@ -124,6 +125,7 @@ export const useConversations = () => {
             muted: currentParticipante?.muted || false,
             my_role: currentParticipante?.role || 'miembro',
             hidden: !!currentParticipante?.hidden_at,
+            hidden_from_all: !!(currentParticipante as any)?.hidden_from_all,
           };
         })
       );
@@ -543,8 +545,15 @@ export const useConversations = () => {
     }
   };
 
+  // Filter conversations for "Todos" view (excluding those hidden from all)
+  const allConversations = conversations.filter(c => !c.hidden_from_all);
+  
+  // Filter conversations for "Mis Grupos" view (only groups, excluding completely hidden ones)
+  const myGroups = conversations.filter(c => c.es_grupo && !c.hidden);
+
   return {
-    conversations,
+    conversations: allConversations,
+    myGroups,
     loading,
     createConversation,
     createGroupConversation,

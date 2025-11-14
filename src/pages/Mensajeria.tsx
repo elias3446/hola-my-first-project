@@ -32,10 +32,12 @@ const Mensajeria = () => {
   const [clearChatDialogOpen, setClearChatDialogOpen] = useState(false);
   const [leaveGroupDialogOpen, setLeaveGroupDialogOpen] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
-  const { conversations, loading: loadingConversations, createConversation, createGroupConversation, deleteConversation, clearMessages, muteConversation, addParticipant, removeParticipant, updateParticipantRole, updateGroupName, leaveGroup } = useConversations();
+  const { conversations, loading: loadingConversations, myGroups, createConversation, createGroupConversation, deleteConversation, clearMessages, muteConversation, addParticipant, removeParticipant, updateParticipantRole, updateGroupName, leaveGroup } = useConversations();
   const { messages, loading: loadingMessages, typing, onlineUsers, sendMessage, editMessage, deleteMessage, setTypingStatus, refetch: refetchMessages } = useMessages(selectedConversationId);
 
-  const selectedConversation = conversations.find((c) => c.id === selectedConversationId);
+  // Para buscar la conversación seleccionada, usar ambas listas
+  const allConversationsForSearch = showGroups ? myGroups : conversations;
+  const selectedConversation = allConversationsForSearch.find((c) => c.id === selectedConversationId);
   const isSelfConversation = selectedConversation?.participante?.id === profile?.id;
   const isOnline = isSelfConversation || (selectedConversation?.participante?.id ? onlineUsers.includes(selectedConversation.participante.id) : false);
   const isAdmin = selectedConversation?.es_grupo && selectedConversation?.my_role === 'administrador';
@@ -117,13 +119,8 @@ const Mensajeria = () => {
   };
 
   // "Mis Grupos" SIEMPRE muestra TODOS los grupos del usuario (sin importar hidden)
-  const groupConversations = conversations.filter(c => c.es_grupo);
-  
-  // "Todos" muestra solo conversaciones no ocultas (individuales y grupales)
-  const allNonHiddenConversations = conversations.filter(c => !c.hidden);
-  
   // Mostrar según la pestaña seleccionada
-  const displayedConversations = showGroups ? groupConversations : allNonHiddenConversations;
+  const displayedConversations = showGroups ? myGroups : conversations;
 
   return (
     <Layout title="Mensajes" icon={MessageSquare}>
@@ -164,7 +161,7 @@ const Mensajeria = () => {
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 )}
               >
-                Mis Grupos ({groupConversations.length})
+                Mis Grupos ({myGroups.length})
               </button>
             </div>
           </div>
