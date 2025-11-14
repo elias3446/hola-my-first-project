@@ -21,6 +21,8 @@ interface ConversationsListProps {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onDeleteConversation?: (id: string) => void;
+  onLeaveGroup?: (id: string) => void;
+  showingGroups?: boolean;
 }
 
 export const ConversationsList = ({
@@ -29,6 +31,8 @@ export const ConversationsList = ({
   selectedId,
   onSelect,
   onDeleteConversation,
+  onLeaveGroup,
+  showingGroups = false,
 }: ConversationsListProps) => {
   if (loading) {
     return (
@@ -145,8 +149,8 @@ export const ConversationsList = ({
               </div>
               </button>
               
-              {/* Delete conversation menu */}
-              {onDeleteConversation && (
+              {/* Delete/Leave menu */}
+              {(onDeleteConversation || (onLeaveGroup && conv.es_grupo)) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
@@ -157,17 +161,30 @@ export const ConversationsList = ({
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDeleteConversation(conv.id);
-                      }}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Eliminar conversación
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                    {showingGroups && conv.es_grupo && onLeaveGroup ? (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLeaveGroup(conv.id);
+                        }}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Salir del grupo
+                      </DropdownMenuItem>
+                    ) : onDeleteConversation ? (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteConversation(conv.id);
+                        }}
+                        className="text-destructive focus:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Eliminar conversación
+                      </DropdownMenuItem>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
