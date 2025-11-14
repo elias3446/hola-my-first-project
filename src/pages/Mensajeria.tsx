@@ -171,10 +171,15 @@ const Mensajeria = () => {
               loading={loadingConversations}
               selectedId={selectedConversationId}
               onSelect={setSelectedConversationId}
-              onDeleteConversation={(id) => {
+              showingGroups={showGroups}
+              onDeleteConversation={!showGroups ? (id) => {
                 setSelectedConversationId(id);
                 setDeleteDialogOpen(true);
-              }}
+              } : undefined}
+              onLeaveGroup={showGroups ? (id) => {
+                setSelectedConversationId(id);
+                setLeaveGroupDialogOpen(true);
+              } : undefined}
             />
           </div>
         </div>
