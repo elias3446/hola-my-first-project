@@ -98,9 +98,21 @@ export const ConversationsList = ({
 
               <div className="flex-1 min-w-0 text-left">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm truncate">
-                    {displayName}
-                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="font-semibold text-sm truncate">
+                      {displayName}
+                    </span>
+                    {conv.es_grupo && conv.hidden_from_all && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                        Oculto de Todos
+                      </Badge>
+                    )}
+                    {conv.hidden && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                        Saliste del grupo
+                      </Badge>
+                    )}
+                  </div>
                   {conv.ultimo_mensaje && (
                     <span className="text-xs text-muted-foreground ml-2 flex-shrink-0">
                       {formatDistanceToNow(new Date(conv.ultimo_mensaje.created_at), {

@@ -751,6 +751,7 @@ export type Database = {
           conversacion_id: string
           created_at: string
           hidden_at: string | null
+          hidden_from_all: boolean | null
           id: string
           muted: boolean | null
           role: Database["public"]["Enums"]["conversation_role"]
@@ -761,6 +762,7 @@ export type Database = {
           conversacion_id: string
           created_at?: string
           hidden_at?: string | null
+          hidden_from_all?: boolean | null
           id?: string
           muted?: boolean | null
           role?: Database["public"]["Enums"]["conversation_role"]
@@ -771,6 +773,7 @@ export type Database = {
           conversacion_id?: string
           created_at?: string
           hidden_at?: string | null
+          hidden_from_all?: boolean | null
           id?: string
           muted?: boolean | null
           role?: Database["public"]["Enums"]["conversation_role"]
@@ -2319,7 +2322,7 @@ export type Database = {
           }
       hide_conversation_for_user: {
         Args: { _conversation_id: string }
-        Returns: undefined
+        Returns: boolean
       }
       hide_message_for_user: {
         Args: { p_message_id: string }
